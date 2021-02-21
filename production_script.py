@@ -66,9 +66,9 @@ def char_remove(name):
     elif ')' in name:
         name = name.replace(')','')
         return name
-    elif '-' in name:
-        name = name.replace('-','')
-        return name
+    # elif '-' in name:
+    #     name = name.replace('-','')
+    #     return name
     else:
         return name
 
@@ -178,9 +178,9 @@ df = df[['Property Name','Property Type','Property Uses','Year Built',
 
 # rename DataFrame columes to remove spaces, characters, and capital letters.
 renames = ['property_name','property_type','property_uses','year_built',
-                    'address','ZIP','gross_area_sqft','site_energy_usage_kBTU/sf',
+                    'address','ZIP','gross_area_sqft','site_energy_usage_kBTU_sf',
                    'total_site_energy_kBTU','percentage_electricity',
-                   'GHG_intensity_kgCO2/sf','onsite_renewable_kWh']
+                   'GHG_intensity_kgCO2_sf','onsite_renewable_kWh']
 
 df.columns = renames
 df.reset_index(inplace=True)
@@ -229,7 +229,7 @@ df2 = df2.copy()
 df = df.merge(df2,how='left',left_on='address',right_on='address').copy()
 
 # dynamic statstics for ranking
-df['customer_rank'] = df['site_energy_usage_kBTU/sf'].map(energy_ranker).copy()
+df['customer_rank'] = df['site_energy_usage_kBTU_sf'].map(energy_ranker).copy()
 
 df = df.copy()
 
