@@ -1,3 +1,6 @@
+# Contribution for Database content for Lead Development and Prospecting Prototype Application to be used by Solar Panel vendors:
+# Prototype dataset describes commercial and Multi-Family developemnts in the city of Boston.
+
 # import libraries
 import requests
 import json
@@ -5,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 # https://stackoverflow.com/questions/21137150/format-suppress-scientific-notation-from-python-pandas-aggregation-results
+# Remove Scientific Notation for DataFrame values and output.
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 # DataFrame Column Processing Function Inventory: Functions to be mapped to respective columns.
@@ -17,6 +21,7 @@ def na_fixer(num):
     else:
         return float(num)
     
+# Initial but not exhaustive investigation of spelling mistakes in address values.
 def spell_fix(name):
     name = str(name)
     if 'Huntingtn' in name:
@@ -25,6 +30,7 @@ def spell_fix(name):
     else:
         return name
     
+# Priority for all caps recognition on left join:
 def suffix_maker(name):
     if 'Avenue' in name:
         name = name.replace('Avenue','AVE')
@@ -59,6 +65,7 @@ def suffix_maker(name):
     else:
         return name
     
+# Priority for address matching on left join:
 def char_remove(name):
     if '.' in name:
         name = name.replace('.','')
@@ -80,7 +87,8 @@ def lowercase(name):
     name = name.lower()
     return name
 
-# Dynamic statistics for ranking and database support.
+# Dynamic percentile statistics for ranking and database support.
+# Categroies have general string labels with concept that highest quartile is most energy intensive:
 def ranker(num,col_name):
 #     edge case of uncertain value
     if num == 0.0:
@@ -102,6 +110,7 @@ def ranker(num,col_name):
         num = 'Good Case Client: Moderate Priority'
         return num
     
+# Ranking simple building size in sqft:
 def sqft_ranker(num,col_name):
 #     edge case of uncertain value
     if num == 0.0:
@@ -123,6 +132,7 @@ def sqft_ranker(num,col_name):
         num = 'Moderate sqft Space: Moderate Priority'
         return num
 
+# Spelling correction for matching addresses:
 def e_place(name):
     name = str(name)
     if name[-2:] == 'AV':
@@ -152,6 +162,7 @@ def num_fix(num):
     else:
         return num
 
+# Map binary categories for presence of sloar panels:
 def solar_present(name):
     if name != 'N':
         name = 'Y'
@@ -159,6 +170,7 @@ def solar_present(name):
     else:
         return name
 
+# conversion to floats:
 def percent_fix(num):
     if num == '#DIV/0':
         num = 0
@@ -179,6 +191,7 @@ def percent_fix(num):
     else:
         return float(num)
 
+# Map for condensing categories of property type:
 def type_namer(name):
     if 'Public Assembly' in name or 'Track' in name or 'Ice' in name or 'tclub' in name or 'Movie' in name or 'Stadium' in name or 'Museum' in name or 'Recreati' in name or 'Indoor' in name or 'Performing' in name or 'Fitness' in name or 'Social' in name:
         name = 'Entertainment - Public Assembly'
@@ -215,25 +228,27 @@ df = pd.read_csv('local_data.csv')
 # File refreshes each year.
 # df = pd.read_excel('https://data.boston.gov/dataset/b09a8b71-274b-4365-9ce6-49b8b44602ef/resource/033c30b4-8d28-40ad-9572-43d8455aaab6/download/berdo-disclosure-for-calendar-year-2019-final.xlsx')
 
-# API call for owner data joining.
-url2 = 'https://data.boston.gov/api/3/action/datastore_search_sql?sql=SELECT%20*%20from%20"391a32e6-d4bb-48d3-a990-cb35a5768a40"'
-result2 = requests.get(url2)
-dict2 = json.loads(result2.text)
-resultdf2 = pd.DataFrame(dict2)
-df2 = pd.DataFrame(resultdf2['result'][1])
-
 # Column to drop from local data.
 # df.drop(columns=['Unnamed: 0'],inplace=True)
 
 # Columns to drop from API call data.
 # df.drop(columns=['Years Reported','User Sumbitted Link'],inplace=True)
 
+# API call for join on shared address values.
+url2 = 'https://data.boston.gov/api/3/action/datastore_search_sql?sql=SELECT%20*%20from%20"391a32e6-d4bb-48d3-a990-cb35a5768a40"'
+result2 = requests.get(url2)
+dict2 = json.loads(result2.text)
+resultdf2 = pd.DataFrame(dict2)
+df2 = pd.DataFrame(resultdf2['result'][1])
+
+# Cleaning and pre-processing: Datatype for each feature considered.
+# Reove nulls without dropping.
+
 df['Address'].fillna('NULL',inplace=True)
 df[' Total Site Energy (kBTU) '].fillna('NULL',inplace=True)
 df['Site EUI (kBTU/sf)'].fillna(0,inplace=True)
 df['% Electricity'].fillna('NULL',inplace=True)
 
-# nulls may need to be zero for flat conversion here.
 df['GHG Intensity (kgCO2/sf)'].fillna('NULL',inplace=True)
 df['User Submitted Info'].fillna('None',inplace=True)
 df[' Onsite Renewable (kWh) '].fillna(0,inplace=True)
@@ -246,8 +261,6 @@ df['Energy Star Score'].fillna('Not applicable to this property type',inplace=Tr
 df = df[df['Address'] != 'NULL'].copy()
 df = df[df[' Total Site Energy (kBTU) '] != 'NULL'].copy()
 df = df[df['% Electricity'] != 'NULL'].copy()
-
-# possibly comment this out ---------
 df = df[df[' Gross Area (sq ft) '] != "Not Available"].copy()
 df = df[df['Site EUI (kBTU/sf)'] != "Not Available"].copy()
 df = df[df[' Total Site Energy (kBTU) '] != "Not Available"].copy()
@@ -255,7 +268,6 @@ df = df[df['GHG Intensity (kgCO2/sf)'] != "Not Available"].copy()
 df = df[df[' Onsite Renewable (kWh) '] != "Not Available"].copy()
 df = df[df['% Electricity'] != "Not Available"].copy()
 df = df[df['GHG Intensity (kgCO2/sf)'] != 'NULL'].copy()
-# -------------
 
 # Reduce property type categories:
 df['Property Type'] = df['Property Type'].map(type_namer)
@@ -269,8 +281,10 @@ df['GHG Intensity (kgCO2/sf)'] = df['GHG Intensity (kgCO2/sf)'].map(float_maker)
 df[' Onsite Renewable (kWh) '] = df[' Onsite Renewable (kWh) '].map(float_maker)
 df['% Electricity'] = df['% Electricity'].map(percent_fix)
 
+# Multiple years were used for initial local data aggregation: Remove duplicates for unique addresses.
 df = df.drop_duplicates(subset=['Address']).copy()
 
+# Select features for database support:
 df = df[['Property Name','Property Type','Property Uses','Year Built',
                     'Address','ZIP',' Gross Area (sq ft) ','Site EUI (kBTU/sf)',
                    ' Total Site Energy (kBTU) ','% Electricity',
@@ -286,18 +300,20 @@ df.columns = renames
 df.reset_index(inplace=True)
 df.drop(columns='index',inplace=True)
 
+# Format address column for join:
 df['address'] = df['address'].map(spell_fix)
 df['address'] = df['address'].map(suffix_maker)
 df['address'] = df['address'].map(char_remove)
 df['address'] = df['address'].map(uppercase)
 
-# Join inventory data for ownership information
+# Processing for second DataFrame in advance of join:
 df2.rename(columns={'owner_list':'owner','r_roof_typ':'roof_type','has_pv':'solar_panels_present'},inplace=True)
 
 # Rename roof type categories for interpretability:
-# Some of these values may need to be verified.
+# Some of these values may need to be separately verified.
 df2['roof_type'] = df2['roof_type'].map({'G':'Gable','F':'Flat','H':'Hip','M':'Mansard','L':'L Shaped','S':'Sawtooth','O':'Unknown'})
 
+# Remove null values:
 df2['st_num'].fillna('None',inplace=True)
 df2['st_name'].fillna('None',inplace=True)
 df2['st_name_suf'].fillna('None',inplace=True)
@@ -306,7 +322,6 @@ df2['roof_type'].fillna('None',inplace=True)
 df2['num_floors'].fillna('None',inplace=True)
 df2['sqft_class'].fillna('None',inplace=True)
 df2['solar_panels_present'].fillna('N',inplace=True)
-
 
 df2['st_name_suf'] = df2['st_name_suf'].map(e_place)
 df2['st_name_suf'] = df2['st_name_suf'].map(space_fix)
@@ -326,13 +341,16 @@ df2 = df2[df2['st_num'] != ' '].copy()
 df2 = df2[df2['st_name'] != ' '].copy()
 df2 = df2[df2['st_name_suf'] != 'nan'].copy()
 
+# Engineer address column in advance of join:
 df2['address'] = df2['st_num'] + ' ' + df2['st_name'] + ' ' + df2['st_name_suf']
 df2['address'].fillna('NULL',inplace=True)
 df2 = df2[df2['address'] != 'NULL'].copy()
 
+# Additional cleaning and reformatting:
 df2['solar_panels_present'] = df2['solar_panels_present'].map(solar_present)
 df2['address'] = df2['address'].map(char_remove)
 
+# Format ans select columns for second DataFrame in advance of join:
 df2 = df2.drop_duplicates(subset=['address']).copy()
 df2.reset_index(inplace=True)
 df2.drop(columns='index',inplace=True)
@@ -340,17 +358,19 @@ df2.drop(columns='index',inplace=True)
 df2 = df2[['address','owner','solar_panels_present','roof_type','num_floors','sqft_class']].copy()
 df2 = df2.copy()
 
-# Merge both DataFrames to include name of owner.
+# Left Join: Merge both DataFrames.
 # df = df.merge(df2,how='left',left_on='address',right_on='address').copy()
 
-# Feature engineering for analytics, ranking and electric unit conversion.
+# Feature engineering for analytics, ranking and electric unit conversion:
+
 df['kBTU_from_electric'] = df['total_site_energy_kBTU'] * df['percentage_electricity']
 
 # https://sciencing.com/calculate-kilowatt-hours-4902973.html
+# BTU --> kWh conversion
 df['kWh_annual_usage'] = df['kBTU_from_electric'] / 3.412
 df['kWh_daily_usage'] = df['kWh_annual_usage'] / 365
 
-# Engineer dynamic statstics for ranking: Quartiles used as guidance in function
+# Engineer with dynamic percentiles for ranking: Quartiles used as guidance in function:
 # https://stackoverflow.com/questions/45330312/pandas-dataframe-apply-raises-typeerror-for-providing-too-many-arguments
 df['customer_BTU_rank'] = df['site_energy_usage_kBTU_sf'].apply(ranker,args=(['site_energy_usage_kBTU_sf'])).copy()
 df['customer_sqft_rank'] = df['gross_area_sqft'].apply(sqft_ranker,args=(['gross_area_sqft'])).copy()
@@ -359,10 +379,7 @@ df['customer_kWh_daily_rank'] = df['kWh_daily_usage'].apply(ranker,args=(['kWh_d
 df['customer_percent_electric_rank'] = df['percentage_electricity'].apply(ranker,args=(['percentage_electricity'])).copy()
 df['customer_emissions_rank'] = df['GHG_intensity_kgCO2_sf'].apply(ranker,args=(['GHG_intensity_kgCO2_sf'])).copy()
 
-df_final = df.copy()
-
 # https://stackoverflow.com/questions/46831294/convert-each-row-of-pandas-dataframe-to-a-separate-json-string
+# Export processed data to JSON format: Process can be refreshed to update database.
 json_file = df.apply(lambda x: x.to_json(),axis=1)
-
-# data appended to previous database: Export to json object.
 json_file.to_json('app_data.json')
