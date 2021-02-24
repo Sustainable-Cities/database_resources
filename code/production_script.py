@@ -192,3 +192,6 @@ df['customer_emissions_rank'] = df['GHG_intensity_kgCO2_sf'].apply(ranker,args=(
 json_file = df.apply(lambda x: x.to_json(),axis=1)
 json_file.to_json('../data/app_data.json')
 # pd.to_pickle('../data/archive_data.pkl')
+
+json_file2 = df2.apply(lambda x: x.to_json(),axis=1)
+json_file2.to_json('../data/alternate_addresses.json')
