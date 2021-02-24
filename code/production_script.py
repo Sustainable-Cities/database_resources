@@ -12,11 +12,6 @@ import pandas as pd
 # Local file for general pre-processing:
 from function_library import *
 
-# https://stackoverflow.com/questions/21137150/format-suppress-scientific-notation-from-python-pandas-aggregation-results
-# Remove Scientific Notation for DataFrame values and output.
-pd.set_option('display.float_format', lambda x: '%.3f' % x)
-
-
 def ranker(num,col_name):
     '''
     Dynamic percentile statistics for ranking and database support: Local functions apply to in-script DataFrame.
@@ -195,5 +190,5 @@ df['customer_emissions_rank'] = df['GHG_intensity_kgCO2_sf'].apply(ranker,args=(
 # https://stackoverflow.com/questions/46831294/convert-each-row-of-pandas-dataframe-to-a-separate-json-string
 # Export processed data to JSON format: Process can be refreshed to update database.
 json_file = df.apply(lambda x: x.to_json(),axis=1)
-json_file.to_json('../data/test_data.json')
-pd.to_pickle('../data/archive_data.pkl')
+json_file.to_json('../data/app_data.json')
+# pd.to_pickle('../data/archive_data.pkl')
