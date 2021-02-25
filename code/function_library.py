@@ -109,6 +109,14 @@ def num_fix(num):
         return num
     else:
         return num
+    
+# first digit was missing from many Boston area zip codes:
+def zip_fix(num):
+    if len(num) == 4:
+        num = '0' + num
+        return num
+    else:
+        return num
 
 def type_namer(name):
     '''

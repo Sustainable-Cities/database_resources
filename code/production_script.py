@@ -117,7 +117,8 @@ df['percentage_electricity'] = df['percentage_electricity'].astype(float)
 
 func_list = [spell_fix,suffix_maker,char_remove,uppercase]
 
-# Format address column for join:
+# Format address columns:
+df['ZIP'] = df['ZIP'].map(zip_fix)
 for func in func_list:
     df['address'] = df['address'].map(func)
 
